@@ -1,14 +1,16 @@
 package telran.employees.controller;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import telran.employees.services.*;
-import telran.view.*;
+import telran.employees.services.EmployeesMethods;
+import telran.employees.services.EmployeesMethodsMapsImpl;
+import telran.view.ConsoleInputOutput;
+import telran.view.InputOutput;
+import telran.view.Menu;
 
 public class EmployeesAppl {
 
@@ -20,7 +22,7 @@ public class EmployeesAppl {
 		}
 		// Configuration file contains text like employeesDataFile=employees.data
 		// Apply BufferedReader for reading configuration
-		String fileName = null;
+		String fileName = "";
 		try {
 			fileName = getFileName(args[0]);
 		} catch (IOException e) {
