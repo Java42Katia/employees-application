@@ -32,12 +32,15 @@ public static ArrayList<Item> getActionItems(EmployeesMethods employees, Set<Str
 			Item.of("Display Employees Info of Department", EmployeeActions::displayEmployeesDepartment)	,
 			Item.of("Display Employees Info filtered by Salary and Department", EmployeeActions::displayEmployeesSalaryDepartment)	,
 			Item.of("Display Employees Info", EmployeeActions::displayEmployees),
-			Item.exit() //TODO there should be exit & save
+			Item.of("Save and Exit", EmployeeActions::saveAndExit, true) //TODO there should be exit & save
 			
 		})) ;
 		
 	}
 	return items;
+}
+private static void saveAndExit(InputOutput io) {
+	employees.save();
 }
 private static void hireEmployee(InputOutput io) {
 	long id = getId(io, true);
