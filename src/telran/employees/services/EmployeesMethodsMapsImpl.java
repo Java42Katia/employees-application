@@ -175,18 +175,23 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 	public void save() {
 		File file = new File(fileName);
 		try {
+			// V.R. To create file isn't obligatory. FileOutputStream will do it
 			if (!file.exists()) file.createNewFile();
 			ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(fileName));
 			mapEmployees.values().forEach(e -> {
 				try {
 					output.writeObject(e);
 				} catch (IOException e1) {
+					/* V.R. This catch is redundant. If is happened it isn't necessary
+					 * to continue. And common catch will do what is necessary
+					 */
 					
 				}
 			});
 			output.close();	
 		} catch (IOException e) {
-			
+			// V.R. It is necessary to send information about failure to
+			// menu mechanism. RunTimeException is the suitable tool for this.
 		}
 	}
 

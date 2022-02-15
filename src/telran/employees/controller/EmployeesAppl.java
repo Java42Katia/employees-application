@@ -38,6 +38,12 @@ public class EmployeesAppl {
 	}
 
 	private static String getFileName(String configFile) throws IOException {
+		/* V.R. This code returns suitable result, but it will not work with real config file.
+		 * Usually each record in config file looks as following
+		 *  [key] = [value]
+		 *  and file includes some records. Each [value] is connected with [key].
+		 *  To get [value] is necessary to use [key]. Like in Map.
+		 */
 		BufferedReader reader = new BufferedReader(new FileReader(configFile));
 		String line = reader.readLine();
 		reader.close();
