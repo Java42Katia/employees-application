@@ -163,7 +163,8 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 		ObjectInputStream input;
 		try {
 			input = new ObjectInputStream(new FileInputStream(fileName));
-			for (;;) {
+			//[YG] much better to serialize whole this rather than separate objects 
+			for (;;) { //[YG] while(true) is considered as better style than for(;;)
 				this.addEmployee((Employee) input.readObject());
 			}
 		} catch (ClassNotFoundException | IOException e) {
@@ -174,9 +175,11 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 	@Override
 	public void save() {
 		File file = new File(fileName);
-		try {
+		try { //[YG] - better to use try(creating resources) {...}catch (....){....} syntax structure
+			//[YG] no need for checking and creating. Java will do it 
 			if (!file.exists()) file.createNewFile();
 			ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(fileName));
+			//[YG] much better to serialize whole this rather than separate objects 
 			mapEmployees.values().forEach(e -> {
 				try {
 					output.writeObject(e);
