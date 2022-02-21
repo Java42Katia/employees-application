@@ -39,7 +39,8 @@ Employee empl6 = new Employee(ID6, NAME, BIRTHDATE6, SALARY3, DEPARTMENT2);
 List<Employee> employeesList = Arrays.asList(empl1,empl2,empl3,empl4,empl5,empl6);
 	@BeforeEach
 	void setUp() throws Exception {
-		employees = new EmployeesMethodsMapsImpl("config");
+
+		employees = new EmployeesMethodsMapsImpl(null);
 		employeesList.forEach(employees::addEmployee);
 		
 	}

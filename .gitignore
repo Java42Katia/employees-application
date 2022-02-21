@@ -1,5 +1,8 @@
 /.classpath
 /.project
 /bin/
+<<<<<<< HEAD
 /config
+=======
+>>>>>>> refs/remotes/origin/master
 /employees.data

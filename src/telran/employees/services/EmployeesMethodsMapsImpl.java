@@ -1,24 +1,15 @@
 package telran.employees.services;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
-import telran.employees.dto.Employee;
-import telran.employees.dto.ReturnCode;
+import telran.employees.dto.*;
+
+import java.io.*;
+
 public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 	/**
 	 * 
@@ -160,34 +151,30 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 
 	@Override
 	public void restore() {
-		ObjectInputStream input;
-		try {
-			input = new ObjectInputStream(new FileInputStream(fileName));
-			for (;;) {
-				this.addEmployee((Employee) input.readObject());
-			}
-		} catch (ClassNotFoundException | IOException e) {
-			
+		File inputFile = new File(fileName);
+		if (inputFile.exists()) {
+			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream(inputFile))) {
+				EmployeesMethodsMapsImpl employeesFromFile = (EmployeesMethodsMapsImpl) input.readObject();
+				this.employeesAge = employeesFromFile.employeesAge;
+				this.employeesDepartment =  employeesFromFile.employeesDepartment;
+				this.employeesSalary = employeesFromFile.employeesSalary;
+				this.mapEmployees = employeesFromFile.mapEmployees;
+			} catch (Exception e) {
+				throw new RuntimeException(e.getMessage());
+			} 
 		}
+		
 	}
 
 	@Override
 	public void save() {
-		File file = new File(fileName);
-		try {
-			if (!file.exists()) file.createNewFile();
-			ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(fileName));
-			mapEmployees.values().forEach(e -> {
-				try {
-					output.writeObject(e);
-				} catch (IOException e1) {
-					
-				}
-			});
-			output.close();	
-		} catch (IOException e) {
-			
+
+		try(ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(fileName))) {
+			output.writeObject(this);
+		} catch (Exception e) {
+			throw new RuntimeException(e.toString());
 		}
+		
 	}
 
 }

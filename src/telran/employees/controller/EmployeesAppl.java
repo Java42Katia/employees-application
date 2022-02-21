@@ -1,35 +1,27 @@
 package telran.employees.controller;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import telran.employees.services.EmployeesMethods;
-import telran.employees.services.EmployeesMethodsMapsImpl;
-import telran.view.ConsoleInputOutput;
-import telran.view.InputOutput;
-import telran.view.Menu;
-
+import telran.employees.services.*;
+import telran.net.Sender;
+import telran.net.TcpSender;
+import telran.view.*;
+import java.io.*;
 public class EmployeesAppl {
-
+private static final String DEFAULT_FILE_NAME = "employees.data";
+private static final Object DATA_FILE_PROPERTY = null;
+static Map<String, String> properties;
+static InputOutput io = new ConsoleInputOutput();
 	public static void main(String[] args) {
-		InputOutput io = new ConsoleInputOutput();
-		if (args.length < 1) {
-			io.writeObjectLine("Usage - argument should contain configuration file name");
-			return;
-		}
-		// Configuration file contains text like employeesDataFile=employees.data
-		// Apply BufferedReader for reading configuration
-		String fileName = "";
+		
+		Sender sender = null;
 		try {
-			fileName = getFileName(args[0]);
-		} catch (IOException e) {
-			io.writeObjectLine(e.getMessage());
-			return;
+			sender = new TcpSender("localhost", 2000);
+		} catch (Exception e) {
+			io.writeObjectLine(e.toString());
 		}
-		EmployeesMethods employeesMethods = new EmployeesMethodsMapsImpl(fileName);
+		EmployeesMethods employeesMethods = new EmployeesMethodsTcpProxy(sender);
 		employeesMethods.restore();
 		HashSet<String> departments = new HashSet<>(Arrays.asList("QA", "Development", "HR", "Management"));
 		Menu menu = new Menu("Employees Application", EmployeeActions.getActionItems(employeesMethods, departments));
@@ -37,11 +29,20 @@ public class EmployeesAppl {
 
 	}
 
-	private static String getFileName(String configFile) throws IOException {
-		BufferedReader reader = new BufferedReader(new FileReader(configFile));
-		String line = reader.readLine();
-		reader.close();
-		return line.split("=")[1];
+	private static String getFileName(String configFile) {
+		
+		if(properties == null) {
+			
+			try(BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
+				properties = reader.lines().map(str -> str.split("[ =:]+"))
+						.collect(Collectors.toMap(tokens -> tokens[0], tokens -> tokens[1]));
+				
+			} catch (Exception e) {
+				io.writeObjectLine(e.getMessage());
+				return null;
+			}
+		}
+		return properties.getOrDefault(DATA_FILE_PROPERTY, DEFAULT_FILE_NAME);
 	}
 
 }
