@@ -5,6 +5,10 @@ import telran.employees.dto.ReturnCode;
 import telran.employees.services.EmployeesMethods;
 import telran.net.Sender;
 import static telran.employees.net.dto.ApiConstants.*;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 public class EmployeesMethodsTcpProxy implements EmployeesMethods {
 private Sender sender;
 	/**
@@ -24,8 +28,8 @@ private Sender sender;
 
 	@Override
 	public ReturnCode removeEmployee(long id) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return sender.send(REMOVE_EMPLOYEE, id);
 	}
 
 	@Override
@@ -36,55 +40,62 @@ private Sender sender;
 
 	@Override
 	public Employee getEmployee(long id) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return sender.send(GET_EMPLOYEE, id);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByAge(int ageFrom, int ageTo) {
-		// TODO Auto-generated method stub
-		return null;
+		int[] age = {ageFrom, ageTo};
+		return sender.send(GET_EMPLOYEE_BY_AGE, age);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesBySalary(int salaryFrom, int salaryTo) {
-		// TODO Auto-generated method stub
-		return null;
+		int[] salary = {salaryFrom, salaryTo};
+		return sender.send(GET_EMPLOYEE_BY_SALARY, salary);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByDepartment(String department) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return sender.send(GET_EMPLOYEE_BY_DEPARTMENT, department);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByDepartmentAndSalary(String department, int salaryFrom, int salaryTo) {
-		// TODO Auto-generated method stub
-		return null;
+		Map<String, String> map = new HashMap<>();
+		map.put("department", department);
+		map.put("salaryFrom", String.valueOf(salaryFrom));
+		map.put("salaryTo", String.valueOf(salaryTo));
+		return sender.send(GET_EMPLOYEE_BY_SALARY_DEPARTMENT, (Serializable) map);
 	}
 
 	@Override
 	public ReturnCode updateSalary(long id, int newSalary) {
-		// TODO Auto-generated method stub
-		return null;
+		Map<String, String> map = new HashMap<>();
+		map.put("id", String.valueOf(id));
+		map.put("newSalary", String.valueOf(newSalary));
+		return sender.send(UPDATE_SALARY, (Serializable) map);
 	}
 
 	@Override
 	public ReturnCode updateDepartment(long id, String newDepartment) {
-		// TODO Auto-generated method stub
-		return null;
+		Map<String, String> map = new HashMap<>();
+		map.put("id", String.valueOf(id));
+		map.put("newDepartment", String.valueOf(newDepartment));
+		return sender.send(UPDATE_DEPARTMENT, (Serializable) map);
 	}
 
 	@Override
 	public void restore() {
-		// TODO Auto-generated method stub
+		
 
 	}
 
 	@Override
 	public void save() {
-		// TODO Auto-generated method stub
+		
 
 	}
 

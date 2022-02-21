@@ -1,7 +1,5 @@
 package telran.view;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashSet;

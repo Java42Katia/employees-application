@@ -1,11 +1,12 @@
 package telran.numbers.controller;
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import telran.numbers.net.CalculatorProxy;
-import telran.numbers.service.*;
-import telran.view.*;
+import telran.numbers.service.Calculator;
+import telran.view.ConsoleInputOutput;
+import telran.view.InputOutput;
+import telran.view.Item;
+import telran.view.Menu;
 public class CalculatorApp {
 
 	private static final String HOST = "localhost";

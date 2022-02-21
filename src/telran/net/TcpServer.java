@@ -1,6 +1,6 @@
 package telran.net;
-import java.io.IOException;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 public class TcpServer implements Runnable {
 private int port;
 private ApplProtocol protocol;
