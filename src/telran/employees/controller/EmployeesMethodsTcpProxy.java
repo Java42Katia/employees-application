@@ -64,6 +64,13 @@ private Sender sender;
 
 	@Override
 	public Iterable<Employee> getEmployeesByDepartmentAndSalary(String department, int salaryFrom, int salaryTo) {
+		/* V.R. 
+		HashMap<String, Integer[]> employeesBySalaryInDepInfo = new HashMap<>();
+		Integer[] salaryInterval = {salaryFrom, salaryTo};
+		employeesBySalaryInDepInfo.put(department, salaryInterval);
+		return sender.send(GET_EMPLOYEES_BY_DEPARTMENT_AND_SALARY, employeesBySalaryInDepInfo);
+		 * 
+		 */
 		Map<String, String> map = new HashMap<>();
 		map.put("department", department);
 		map.put("salaryFrom", String.valueOf(salaryFrom));
@@ -98,5 +105,23 @@ private Sender sender;
 		
 
 	}
-
+/* V.R. The following exception appears if to select 11 (Exit) in
+ * Main menu. Can you explain why and repair the problem?
+java.net.SocketException: Connection reset
+	at java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:323)
+	at java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:350)
+	at java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:803)
+	at java.base/java.net.Socket$SocketInputStream.read(Socket.java:966)
+	at java.base/java.net.Socket$SocketInputStream.read(Socket.java:961)
+	at java.base/java.io.ObjectInputStream$PeekInputStream.peek(ObjectInputStream.java:2853)
+	at java.base/java.io.ObjectInputStream$BlockDataInputStream.peek(ObjectInputStream.java:3180)
+	at java.base/java.io.ObjectInputStream$BlockDataInputStream.peekByte(ObjectInputStream.java:3190)
+	at java.base/java.io.ObjectInputStream.readObject0(ObjectInputStream.java:1693)
+	at java.base/java.io.ObjectInputStream.readObject(ObjectInputStream.java:514)
+	at java.base/java.io.ObjectInputStream.readObject(ObjectInputStream.java:472)
+	at telran.net.TcpClientServer.run(TcpClientServer.java:21)
+	at telran.net.TcpServer.run(TcpServer.java:21)
+	at telran.employees.net.EmployeesServerAppl.main(EmployeesServerAppl.java:11)
+* 
+ */
 }

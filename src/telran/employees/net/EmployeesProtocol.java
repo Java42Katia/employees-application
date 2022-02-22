@@ -130,6 +130,15 @@ public class EmployeesProtocol implements ApplProtocol {
 	@SuppressWarnings("unchecked")
 	private Response _employee_get_filter_salary_department(Serializable requestData) {
 		try {
+			/* V.R. There is another (and more simple) way to implement the same
+			HashMap<String, Integer[]> depSalaryInterval = (HashMap<String, Integer[]>)requestData;
+			String department = depSalaryInterval.keySet().iterator().next();
+			Integer[] salaryinterval = (Integer[]) depSalaryInterval.get(department);
+			return new Response(ResponseCode.OK, 
+				(Serializable) employees
+				.getEmployeesByDepartmentAndSalary(department, salaryinterval[0], salaryinterval[1]));
+			 * 
+			 */
 			String department = ((HashMap<String, String>) requestData).get("department");
 			int salaryFrom = Integer.parseInt(((HashMap<String, String>) requestData).get("salaryFrom"));
 			int salaryTo = Integer.parseInt(((HashMap<String, String>) requestData).get("salaryTo"));
