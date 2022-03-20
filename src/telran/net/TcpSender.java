@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 import telran.net.dto.*;
 
-public class TcpSender implements Sender, Closeable {
+public class TcpSender implements Sender {
  private Socket socket;
  private ObjectOutputStream writer;
  private ObjectInputStream reader;

@@ -1,14 +1,24 @@
 package telran.net;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.IOException;
+import java.net.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 public class TcpServer implements Runnable {
+private static final int DEFAULT_THREADS_POOL_CAPACITY = 3;
 private int port;
 private ApplProtocol protocol;
 private ServerSocket serverSocket;
-public TcpServer(int port, ApplProtocol protocol) throws Exception{
+private ExecutorService executor;
+
+public TcpServer(int port, ApplProtocol protocol, int nThreads) throws Exception{
 	this.port = port;
 	this.protocol = protocol;
 	serverSocket = new ServerSocket(port);
+	executor = Executors.newFixedThreadPool(nThreads);
+	
+}
+public TcpServer(int port, ApplProtocol protocol) throws Exception{
+	this(port, protocol, DEFAULT_THREADS_POOL_CAPACITY);
 	
 }
 	@Override
@@ -18,14 +28,23 @@ public TcpServer(int port, ApplProtocol protocol) throws Exception{
 			try {
 				Socket socket = serverSocket.accept();
 				TcpClientServer client = new TcpClientServer(socket, protocol);
-				client.run();
+				
+				executor.execute(client);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+				
 				e.printStackTrace();
 				break;
 			}
 		}
 
+	}
+	public void shutdown(int timeout) {
+		//TODO - solution of a graceful shutdown
+		//What is a graceful server shutdown
+		//1. No receive new clients
+		//2. Running getResponse should be performed
+		//3. After SocketTimeoutException exiting from the loop for each client (to trigger SocketTimeoutException
+		// you should apply method setSoTimeout for the client sockets with the given timeout)
 	}
 
 }

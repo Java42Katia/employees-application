@@ -6,17 +6,18 @@ import telran.employees.services.EmployeesMethods;
 import telran.net.Sender;
 import static telran.employees.net.dto.ApiConstants.*;
 
-import java.io.Serializable;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
-public class EmployeesMethodsTcpProxy implements EmployeesMethods {
+public class EmployeesMethodsProxy implements EmployeesMethods, Closeable {
+
 private Sender sender;
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public EmployeesMethodsTcpProxy(Sender sender) {
+	public EmployeesMethodsProxy(Sender sender) {
 		this.sender = sender;
 	}
 
@@ -46,57 +47,60 @@ private Sender sender;
 
 	@Override
 	public Iterable<Employee> getEmployeesByAge(int ageFrom, int ageTo) {
-		int[] age = {ageFrom, ageTo};
-		return sender.send(GET_EMPLOYEE_BY_AGE, age);
+		Integer[] fromTo = {ageFrom, ageTo};
+		return sender.send(GET_EMPLOYEES_AGE, fromTo);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesBySalary(int salaryFrom, int salaryTo) {
-		int[] salary = {salaryFrom, salaryTo};
-		return sender.send(GET_EMPLOYEE_BY_SALARY, salary);
+		Integer[] fromTo = {salaryFrom, salaryTo};
+		return sender.send(GET_EMPLOYEES_SALARY, fromTo);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByDepartment(String department) {
-		
-		return sender.send(GET_EMPLOYEE_BY_DEPARTMENT, department);
+		return sender.send(GET_EMPLOYEES_DEPARTMENT, department);
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByDepartmentAndSalary(String department, int salaryFrom, int salaryTo) {
-		Map<String, String> map = new HashMap<>();
-		map.put("department", department);
-		map.put("salaryFrom", String.valueOf(salaryFrom));
-		map.put("salaryTo", String.valueOf(salaryTo));
-		return sender.send(GET_EMPLOYEE_BY_SALARY_DEPARTMENT, (Serializable) map);
+		HashMap<String, Object> map = new HashMap<>();
+		map.put(DEPARTMENT, department);
+		Integer[] fromTo = {salaryFrom, salaryTo};
+		map.put(FROM_TO, fromTo);
+		return sender.send(GET_EMPLOYEES_DEPARTMENT_SALARY, map);
 	}
 
 	@Override
 	public ReturnCode updateSalary(long id, int newSalary) {
-		Map<String, String> map = new HashMap<>();
-		map.put("id", String.valueOf(id));
-		map.put("newSalary", String.valueOf(newSalary));
-		return sender.send(UPDATE_SALARY, (Serializable) map);
+		HashMap<String, Object> map = new HashMap<>();
+		map.put(ID, id);
+		
+		map.put(SALARY, newSalary);
+		return sender.send(UPDATE_SALARY, map);
 	}
 
 	@Override
 	public ReturnCode updateDepartment(long id, String newDepartment) {
-		Map<String, String> map = new HashMap<>();
-		map.put("id", String.valueOf(id));
-		map.put("newDepartment", String.valueOf(newDepartment));
-		return sender.send(UPDATE_DEPARTMENT, (Serializable) map);
+		HashMap<String, Object> map = new HashMap<>();
+		map.put(ID, id);
+		
+		map.put(DEPARTMENT, newDepartment);
+		return sender.send(UPDATE_DEPARTMENT, map);
 	}
 
 	@Override
 	public void restore() {
-		
-
 	}
 
 	@Override
 	public void save() {
-		
+	}
 
+	@Override
+	public void close() throws IOException {
+		sender.close();
+		
 	}
 
 }

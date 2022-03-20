@@ -21,62 +21,106 @@ public class EmployeesProtocol implements ApplProtocol {
 
 	@Override
 	public Response getResponse(Request request) {
-		switch (request.requestType) {
-		case ADD_EMPLOYEE:
-			return _employee_add(request.requestData);
-		case GET_EMPLOYEES:
-			return _get(request.requestData);
-		case REMOVE_EMPLOYEE:
-			return _employee_remove(request.requestData);
-		case UPDATE_SALARY:
-			return _employee_update_salary(request.requestData);
-		case UPDATE_DEPARTMENT:
-			return _employee_update_department(request.requestData);
-		case GET_EMPLOYEE:
-			return _employee_get(request.requestData);
-		case GET_EMPLOYEE_BY_AGE:
-			return _employee_get_filter_age(request.requestData);
-		case GET_EMPLOYEE_BY_SALARY:
-			return _employee_get_filter_salary(request.requestData);
-		case GET_EMPLOYEE_BY_DEPARTMENT:
-			return _employee_get_filter_department(request.requestData);
-		case GET_EMPLOYEE_BY_SALARY_DEPARTMENT:
-			return _employee_get_filter_salary_department(request.requestData);
-
-		default:
-			return new Response(ResponseCode.UNKNOWN_REQUEST, request.requestType + " not implemented");
+		switch(request.requestType) {
+		//FIXME get rid of the following sitch operator
+		case ADD_EMPLOYEE: return _employee_add(request.requestData);
+		case GET_EMPLOYEES: return _get(request.requestData);
+		case GET_EMPLOYEE: return _employee_get(request.requestData);
+		case GET_EMPLOYEES_AGE: return _age_get(request.requestData);
+		case GET_EMPLOYEES_SALARY: return _salary_get(request.requestData);
+		case GET_EMPLOYEES_DEPARTMENT: return _department_get(request.requestData);
+		case GET_EMPLOYEES_DEPARTMENT_SALARY: return _department_salary_get(request.requestData);
+		case REMOVE_EMPLOYEE: return _employee_remove(request.requestData);
+		case UPDATE_DEPARTMENT: return _department_update(request.requestData);
+		case UPDATE_SALARY: return _salary_update(request.requestData);
+		default: return new Response(ResponseCode.UNKNOWN_REQUEST,
+				request.requestType + " not implemented");
 		}
-
 	}
+	
+
+	private Response _salary_update(Serializable requestData) {
+		try {
+			Map<String, Object> map = (Map<String,Object>)requestData;
+			ReturnCode code = employees.updateSalary((Long)map.get(ID), (Integer)map.get(SALARY));
+			
+			return new Response(ResponseCode.OK, (Serializable)code);
+		} catch (Exception e) {
+			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
+		}
+	}
+
+
+	private Response _department_update(Serializable requestData) {
+		try {
+			Map<String, Object> map = (Map<String,Object>)requestData;
+			ReturnCode code = employees.updateDepartment((Long)map.get(ID), (String)map.get(DEPARTMENT));
+			
+			return new Response(ResponseCode.OK, (Serializable)code);
+		} catch (Exception e) {
+			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
+		}
+	}
+
 
 	private Response _employee_remove(Serializable requestData) {
 		try {
-			ReturnCode responseData = employees.removeEmployee((Long) requestData);
-			return new Response(ResponseCode.OK, responseData);
+			Long id = (Long)requestData;
+			ReturnCode code = employees.removeEmployee(id);
+			
+			return new Response(ResponseCode.OK, (Serializable)code);
 		} catch (Exception e) {
 			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private Response _employee_update_salary(Serializable requestData) {
+
+	private Response _department_salary_get(Serializable requestData) {
 		try {
-			Long id = Long.parseLong(((HashMap<String, String>) requestData).get("id"));
-			int newSalary = Integer.parseInt(((HashMap<String, String>) requestData).get("newSalary"));
-			ReturnCode responseData = employees.updateSalary(id, newSalary);
-			return new Response(ResponseCode.OK, responseData);
+			Map<String, Object> map = (Map<String,Object>)requestData;
+			
+			Integer[] fromTo = (Integer[])map.get(FROM_TO);
+			String department = (String)map.get(DEPARTMENT);
+			List<Employee> responseData = new ArrayList<>();
+			employees.getEmployeesByDepartmentAndSalary(department, fromTo[0], fromTo[1]).forEach(responseData::add);
+			
+			return new Response(ResponseCode.OK, (Serializable)responseData);
 		} catch (Exception e) {
 			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private Response _employee_update_department(Serializable requestData) {
+	private Response _department_get(Serializable requestData) {
 		try {
-			Long id = Long.parseLong(((HashMap<String, String>) requestData).get("id"));
-			String newDepartment = ((HashMap<String, String>) requestData).get("newDepartment");
-			ReturnCode responseData = employees.updateDepartment(id, newDepartment);
-			return new Response(ResponseCode.OK, responseData);
+			String department = (String)requestData;
+			List<Employee> responseData = new ArrayList<>();
+			employees.getEmployeesByDepartment(department).forEach(responseData::add);
+			
+			return new Response(ResponseCode.OK, (Serializable)responseData);
+		} catch (Exception e) {
+			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
+		}
+	}
+
+	private Response _salary_get(Serializable requestData) {
+		try {
+			Integer[] fromTo = (Integer[])requestData;
+			List<Employee> responseData = new ArrayList<>();
+			employees.getEmployeesBySalary(fromTo[0], fromTo[1]).forEach(responseData::add);
+			
+			return new Response(ResponseCode.OK, (Serializable)responseData);
+		} catch (Exception e) {
+			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
+		}
+	}
+
+	private Response _age_get(Serializable requestData) {
+		try {
+			Integer[] fromTo = (Integer[])requestData;
+			List<Employee> responseData = new ArrayList<>();
+			employees.getEmployeesByAge(fromTo[0], fromTo[1]).forEach(responseData::add);
+			
+			return new Response(ResponseCode.OK, (Serializable)responseData);
 		} catch (Exception e) {
 			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
 		}
@@ -84,58 +128,10 @@ public class EmployeesProtocol implements ApplProtocol {
 
 	private Response _employee_get(Serializable requestData) {
 		try {
-			Long id = (Long) requestData;
-			Employee responseData = employees.getEmployee(id);
-			return new Response(ResponseCode.OK, responseData);
-		} catch (Exception e) {
-			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
-		}
-	}
-
-	private Response _employee_get_filter_age(Serializable requestData) {
-		try {
-			int ageFrom = ((int[]) requestData)[0];
-			int ageTo = ((int[]) requestData)[1];
-			List<Employee> responseData = new ArrayList<>();
-			employees.getEmployeesByAge(ageFrom, ageTo).forEach(responseData::add);
-			return new Response(ResponseCode.OK, (Serializable) responseData);
-		} catch (Exception e) {
-			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
-		}
-	}
-
-	private Response _employee_get_filter_salary(Serializable requestData) {
-		try {
-			int salaryFrom = ((int[]) requestData)[0];
-			int salaryTo = ((int[]) requestData)[1];
-			List<Employee> responseData = new ArrayList<>();
-			employees.getEmployeesBySalary(salaryFrom, salaryTo).forEach(responseData::add);
-			return new Response(ResponseCode.OK, (Serializable) responseData);
-		} catch (Exception e) {
-			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
-		}
-	}
-
-	private Response _employee_get_filter_department(Serializable requestData) {
-		try {
-			String department = (String) requestData;
-			List<Employee> responseData = new ArrayList<>();
-			employees.getEmployeesByDepartment(department).forEach(responseData::add);
-			return new Response(ResponseCode.OK, (Serializable) responseData);
-		} catch (Exception e) {
-			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private Response _employee_get_filter_salary_department(Serializable requestData) {
-		try {
-			String department = ((HashMap<String, String>) requestData).get("department");
-			int salaryFrom = Integer.parseInt(((HashMap<String, String>) requestData).get("salaryFrom"));
-			int salaryTo = Integer.parseInt(((HashMap<String, String>) requestData).get("salaryTo"));
-			List<Employee> responseData = new ArrayList<>();
-			employees.getEmployeesByDepartmentAndSalary(department, salaryFrom, salaryTo).forEach(responseData::add);
-			return new Response(ResponseCode.OK, (Serializable) responseData);
+			Long id = (Long)requestData;
+			Employee empl = employees.getEmployee(id);
+			
+			return new Response(ResponseCode.OK, (Serializable)empl);
 		} catch (Exception e) {
 			return new Response(ResponseCode.WRONG_REQUEST_DATA, e.getMessage());
 		}

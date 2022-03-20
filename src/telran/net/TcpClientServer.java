@@ -10,6 +10,9 @@ ObjectOutputStream writer;
 ApplProtocol protocol;
 public TcpClientServer(Socket socket, ApplProtocol protocol) throws Exception{
 	this.socket = socket;
+	
+	//socket.setSoTimeout(1000); //if socket is in the idle mode after 1 sec.
+	//there will be SocketTimeoutException
 	reader = new ObjectInputStream(socket.getInputStream());
 	writer = new ObjectOutputStream(socket.getOutputStream());
 	this.protocol = protocol;

@@ -7,13 +7,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.StreamSupport;
 
 import telran.employees.dto.Employee;
@@ -34,18 +31,70 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
  private TreeMap<Integer, List<Employee>> employeesSalary = new TreeMap<>(); //key - salary,
  //value - list of employees with the same salary
  private HashMap<String, List<Employee>> employeesDepartment = new HashMap<>();
+ static ReadWriteLock lockEmployees = new ReentrantReadWriteLock();
+ static Lock readLockEmployees = lockEmployees.readLock();
+ static Lock writeLockEmployees = lockEmployees.writeLock();
+ static ReadWriteLock lockAge = new ReentrantReadWriteLock();
+ static Lock readLockAge = lockAge.readLock();
+ static Lock writeLockAge = lockAge.writeLock();
+ static ReadWriteLock lockDepartment = new ReentrantReadWriteLock();
+ static Lock readLockDepartment = lockDepartment.readLock();
+ static Lock writeLockDepartment = lockDepartment.writeLock();
+ static ReadWriteLock lockSalary = new ReentrantReadWriteLock();
+ static Lock readLockSalary = lockSalary.readLock();
+ static Lock writeLockSalary = lockSalary.writeLock();
+ private void lockAllWrite() {
+	 writeLockEmployees.lock();
+	 writeLockAge.lock();
+	 writeLockDepartment.lock();
+	 writeLockSalary.lock();
+ }
+ private void unLockAllWrite() {
+	 writeLockEmployees.unlock();
+	 writeLockAge.unlock();
+	 writeLockDepartment.unlock();
+	 writeLockSalary.unlock();
+ }
+ private void lockDepartmentSalary() {
+	 readLockDepartment.lock();
+	 readLockSalary.lock();
+ }
+ private void unLockDepartmentSalary() {
+	 readLockDepartment.unlock();
+	 readLockSalary.unlock();
+ }
+ private void updateSalaryLock() {
+	 readLockEmployees.lock();
+	 writeLockSalary.lock();
+ }
+ private void updateSalaryUnlock() {
+	 readLockEmployees.unlock();
+	 writeLockSalary.unlock();
+ }
+ private void updateDepartmentLock() {
+	 readLockEmployees.lock();
+	 writeLockDepartment.lock();
+ }
+ private void updateDepartmentUnlock() {
+	 readLockEmployees.unlock();
+	 writeLockDepartment.unlock();
+ }
 	@Override
 	public ReturnCode addEmployee(Employee empl) {
-		if (mapEmployees.containsKey(empl.id)) {
-			return ReturnCode.EMPLOYEE_ALREADY_EXISTS;
+		try {
+			lockAllWrite();
+			if (mapEmployees.containsKey(empl.id)) {
+				return ReturnCode.EMPLOYEE_ALREADY_EXISTS;
+			}
+			Employee emplS = copyOneEmployee(empl);
+			mapEmployees.put(emplS.id, emplS);
+			employeesAge.computeIfAbsent(getAge(emplS), k -> new LinkedList<Employee>()).add(emplS);
+			employeesSalary.computeIfAbsent(emplS.salary, k -> new LinkedList<Employee>()).add(emplS);
+			employeesDepartment.computeIfAbsent(emplS.department, k -> new LinkedList<Employee>()).add(emplS);
+			return ReturnCode.OK;
+		} finally {
+			unLockAllWrite();
 		}
-		Employee emplS = copyOneEmployee(empl);
-		mapEmployees.put(emplS.id, emplS);
-		employeesAge.computeIfAbsent(getAge(emplS), k -> new LinkedList<Employee>()).add(emplS);
-		employeesSalary.computeIfAbsent(emplS.salary, k -> new LinkedList<Employee>()).add(emplS);
-		employeesDepartment.computeIfAbsent(emplS.department, k -> new LinkedList<Employee>()).add(emplS);
-		
-		return ReturnCode.OK;
 	}
 
 	private Integer getAge(Employee emplS) {
@@ -55,20 +104,30 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 
 	@Override
 	public ReturnCode removeEmployee(long id) {
-		Employee empl = mapEmployees.remove(id);
-		if (empl == null) {
-			return ReturnCode.EMPLOYEE_NOT_FOUND;
+		try {
+			lockAllWrite();
+			Employee empl = mapEmployees.remove(id);
+			if (empl == null) {
+				return ReturnCode.EMPLOYEE_NOT_FOUND;
+			}
+			employeesAge.get(getAge(empl)).remove(empl);
+			employeesDepartment.get(empl.department).remove(empl);
+			employeesSalary.get(empl.salary).remove(empl);
+			return ReturnCode.OK;
+		} finally {
+			unLockAllWrite();
 		}
-		employeesAge.get(getAge(empl)).remove(empl);
-		employeesDepartment.get(empl.department).remove(empl);
-		employeesSalary.get(empl.salary).remove(empl);
-		return ReturnCode.OK;
 	}
 
 	@Override
 	public Iterable<Employee> getAllEmployees() {
 		
-		return copyEmployees(mapEmployees.values());
+		try {
+			readLockEmployees.lock();
+			return copyEmployees(mapEmployees.values());
+		} finally {
+			readLockEmployees.unlock();
+		}
 	}
 
 	private Iterable<Employee> copyEmployees(Collection<Employee> employees) {
@@ -84,16 +143,25 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 
 	@Override
 	public Employee getEmployee(long id) {
-		Employee empl = mapEmployees.get(id);
-		return empl == null ? null : copyOneEmployee(empl);
+		try {
+			readLockEmployees.lock();
+			Employee empl = mapEmployees.get(id);
+			return empl == null ? null : copyOneEmployee(empl);
+		} finally {
+			readLockEmployees.unlock();
+		}
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByAge(int ageFrom, int ageTo) {
-		Collection<List<Employee>> lists =
-				employeesAge.subMap(ageFrom, true, ageTo, true).values();
-		List<Employee> employeesList = getCombinedList(lists);
-		return copyEmployees(employeesList);
+		try {
+			readLockAge.lock();
+			Collection<List<Employee>> lists = employeesAge.subMap(ageFrom, true, ageTo, true).values();
+			List<Employee> employeesList = getCombinedList(lists);
+			return copyEmployees(employeesList);
+		} finally {
+			readLockAge.unlock();
+		}
 	}
 
 	private List<Employee> getCombinedList(Collection<List<Employee>> lists) {
@@ -103,17 +171,25 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 
 	@Override
 	public Iterable<Employee> getEmployeesBySalary(int salaryFrom, int salaryTo) {
-		Collection<List<Employee>> lists =
-				employeesSalary.subMap(salaryFrom, true, salaryTo, true).values();
-		List<Employee> employeesList = getCombinedList(lists);
-		return copyEmployees(employeesList);
+		try {
+			readLockSalary.lock();
+			Collection<List<Employee>> lists = employeesSalary.subMap(salaryFrom, true, salaryTo, true).values();
+			List<Employee> employeesList = getCombinedList(lists);
+			return copyEmployees(employeesList);
+		} finally {
+			readLockSalary.unlock();
+		}
 	}
 
 	@Override
 	public Iterable<Employee> getEmployeesByDepartment(String department) {
-		List<Employee> employees = employeesDepartment.getOrDefault(department, Collections.emptyList());
-		
-		return employees.isEmpty() ? employees : copyEmployees(employees);
+		try {
+			readLockDepartment.lock();
+			List<Employee> employees = employeesDepartment.getOrDefault(department, Collections.emptyList());
+			return employees.isEmpty() ? employees : copyEmployees(employees);
+		} finally {
+			readLockDepartment.unlock();
+		}
 	}
 
 	
@@ -121,41 +197,56 @@ public class EmployeesMethodsMapsImpl implements EmployeesMethods {
 	@Override
 	public Iterable<Employee> getEmployeesByDepartmentAndSalary(String department, int salaryFrom,
 			int salaryTo) {
-		Iterable<Employee> employeesByDepartment = getEmployeesByDepartment(department);
-		HashSet<Employee> employeesBySalary = new HashSet<>((List<Employee>)getEmployeesBySalary(salaryFrom, salaryTo));
-		
-		return StreamSupport.stream(employeesByDepartment.spliterator(), false)
-				.filter(employeesBySalary::contains).toList();
+		try {
+			lockDepartmentSalary();
+			Iterable<Employee> employeesByDepartment = getEmployeesByDepartment(department);
+			HashSet<Employee> employeesBySalary = new HashSet<>(
+					(List<Employee>) getEmployeesBySalary(salaryFrom, salaryTo));
+			return StreamSupport.stream(employeesByDepartment.spliterator(), false).filter(employeesBySalary::contains)
+					.toList();
+		} finally {
+			unLockDepartmentSalary();
+		}
 	}
 
 	@Override
 	public ReturnCode updateSalary(long id, int newSalary) {
-		Employee empl = mapEmployees.get(id);
-		if (empl == null) {
-			return ReturnCode.EMPLOYEE_NOT_FOUND;
+		try {
+			updateSalaryLock();
+			Employee empl = mapEmployees.get(id);
+			if (empl == null) {
+				return ReturnCode.EMPLOYEE_NOT_FOUND;
+			}
+			if (empl.salary == newSalary) {
+				return ReturnCode.SALARY_NOT_UPDATED;
+			}
+			employeesSalary.get(empl.salary).remove(empl);
+			empl.salary = newSalary;
+			employeesSalary.computeIfAbsent(empl.salary, k -> new LinkedList<Employee>()).add(empl);
+			return ReturnCode.OK;
+		} finally {
+			updateSalaryUnlock();
 		}
-		if (empl.salary == newSalary) {
-			return ReturnCode.SALARY_NOT_UPDATED;
-		}
-		employeesSalary.get(empl.salary).remove(empl);
-		empl.salary = newSalary;
-		employeesSalary.computeIfAbsent(empl.salary, k -> new LinkedList<Employee>()).add(empl);
-		return ReturnCode.OK;
 	}
 
 	@Override
 	public ReturnCode updateDepartment(long id, String newDepartment) {
-		Employee empl = mapEmployees.get(id);
-		if (empl == null) {
-			return ReturnCode.EMPLOYEE_NOT_FOUND;
+		try {
+			updateDepartmentLock();
+			Employee empl = mapEmployees.get(id);
+			if (empl == null) {
+				return ReturnCode.EMPLOYEE_NOT_FOUND;
+			}
+			if (empl.department.equals(newDepartment)) {
+				return ReturnCode.DEPARTMENT_NOT_UPDATED;
+			}
+			employeesDepartment.get(empl.department).remove(empl);
+			empl.department = newDepartment;
+			employeesDepartment.computeIfAbsent(empl.department, k -> new LinkedList<Employee>()).add(empl);
+			return ReturnCode.OK;
+		} finally {
+			updateDepartmentUnlock();
 		}
-		if (empl.department.equals(newDepartment)) {
-			return ReturnCode.DEPARTMENT_NOT_UPDATED;
-		}
-		employeesDepartment.get(empl.department).remove(empl);
-		empl.department = newDepartment;
-		employeesDepartment.computeIfAbsent(empl.department, k -> new LinkedList<Employee>()).add(empl);
-		return ReturnCode.OK;
 	}
 
 	@Override

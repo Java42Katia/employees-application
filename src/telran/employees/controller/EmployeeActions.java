@@ -2,7 +2,7 @@ package telran.employees.controller;
 
 import java.time.LocalDate;
 import java.util.*;
-
+import java.io.*;
 import telran.employees.dto.Employee;
 import telran.employees.services.EmployeesMethods;
 import telran.view.*;
@@ -32,16 +32,20 @@ public static ArrayList<Item> getActionItems(EmployeesMethods employees, Set<Str
 			Item.of("Display Employees Info of Department", EmployeeActions::displayEmployeesDepartment)	,
 			Item.of("Display Employees Info filtered by Salary and Department", EmployeeActions::displayEmployeesSalaryDepartment)	,
 			Item.of("Display Employees Info", EmployeeActions::displayEmployees),
-			Item.of("Exit", io -> employees.save(), true) 
-
+			Item.of("Exit", EmployeeActions::exit, true) 
 			
 		})) ;
 		
 	}
 	return items;
 }
-private static void saveAndExit(InputOutput io) {
-	employees.save();
+private static void exit(InputOutput io) {
+	try {
+		((Closeable)employees).close();
+	} catch (IOException e) {
+		
+		e.printStackTrace();
+	}
 }
 private static void hireEmployee(InputOutput io) {
 	long id = getId(io, true);
