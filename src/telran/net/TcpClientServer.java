@@ -19,22 +19,28 @@ public TcpClientServer(Socket socket, ApplProtocol protocol) throws Exception{
 }
 	@Override
 	public void run() {
-		try {
-			while(true) {
-				Request request = (Request) reader.readObject();
-				Response response = protocol.getResponse(request);
-				writer.writeObject(response);
+			while(!TcpServer.isShutdown) {
+				try {
+					Request request = (Request) reader.readObject();
+					Response response = protocol.getResponse(request);
+					writer.writeObject(response);
+				} catch (SocketTimeoutException e) {
+					
+				}
+				catch(EOFException e) {
+					break;
+				} catch (Exception e) {
+					System.out.println(e);
+					break;
+				}
 			}
-		} catch(EOFException e) {
 			try {
 				socket.close();
 			} catch (IOException e1) {
 				
 				e1.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		
 
 	}
 
