@@ -12,8 +12,10 @@ import static telran.employees.net.dto.ApiConstants.*;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Method;
 public class EmployeesProtocol implements ApplProtocol {
-	public EmployeesProtocol(EmployeesMethods employees) {
+public EmployeesProtocol(EmployeesMethods employees) {
+
 		this.employees = employees;
 	}
 
@@ -21,20 +23,17 @@ public class EmployeesProtocol implements ApplProtocol {
 
 	@Override
 	public Response getResponse(Request request) {
-		switch(request.requestType) {
-		//FIXME get rid of the following sitch operator
-		case ADD_EMPLOYEE: return _employee_add(request.requestData);
-		case GET_EMPLOYEES: return _get(request.requestData);
-		case GET_EMPLOYEE: return _employee_get(request.requestData);
-		case GET_EMPLOYEES_AGE: return _age_get(request.requestData);
-		case GET_EMPLOYEES_SALARY: return _salary_get(request.requestData);
-		case GET_EMPLOYEES_DEPARTMENT: return _department_get(request.requestData);
-		case GET_EMPLOYEES_DEPARTMENT_SALARY: return _department_salary_get(request.requestData);
-		case REMOVE_EMPLOYEE: return _employee_remove(request.requestData);
-		case UPDATE_DEPARTMENT: return _department_update(request.requestData);
-		case UPDATE_SALARY: return _salary_update(request.requestData);
-		default: return new Response(ResponseCode.UNKNOWN_REQUEST,
-				request.requestType + " not implemented");
+
+		try {
+			Method method = 
+					EmployeesProtocol.class.getDeclaredMethod(request.requestType.replaceAll("/","_"), 
+							Serializable.class);
+			method.setAccessible(true);
+			return (Response) method.invoke(this, request.requestData);
+			
+		} catch (Exception e) {
+			return new Response(ResponseCode.UNKNOWN_REQUEST,
+					request.requestType + " not implemented");
 		}
 	}
 	
